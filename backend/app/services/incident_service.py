@@ -238,20 +238,42 @@ def transition_incident_status(
     return incident
 
 
+def citizen_linked_report_ids(db: Session, incident: Incident, citizen: User) -> set[str]:
+    """IDs of the citizen's own reports that are linked to this incident."""
+    rows = (
+        db.query(ReportIncidentLink.report_id)
+        .join(Report, Report.id == ReportIncidentLink.report_id)
+        .filter(ReportIncidentLink.incident_id == incident.id, Report.reporter_id == citizen.id)
+        .all()
+    )
+    return {r[0] for r in rows}
+
+
 def get_incident_detail(db: Session, incident_id: str, current_user: User) -> IncidentOut:
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
         raise NotFoundError("Incident")
 
-    # If institutional officer, ensure authorized
+    # Object-level authorization. Officers: only their institution's cases.
+    # Citizens: only cases linked to a report they submitted, and even then the
+    # view is redacted below (other reporters' reports, disputes and exact
+    # coordinates are never exposed to another citizen).
+    own_report_ids: Optional[set[str]] = None
     if current_user.role == UserRole.OFFICER:
         require_officer_assigned_to_incident(db, incident, current_user)
+    elif current_user.role == UserRole.CITIZEN:
+        own_report_ids = citizen_linked_report_ids(db, incident, current_user)
+        if not own_report_ids:
+            raise ForbiddenError("You can only view incidents linked to your own reports.")
+    is_citizen = own_report_ids is not None
 
     # Fetch linked reports
     links = db.query(ReportIncidentLink).filter(ReportIncidentLink.incident_id == incident.id).all()
     linked_reports = []
     for link in links:
         rep = link.report
+        if is_citizen and rep.id not in own_report_ids:
+            continue  # another citizen's report: not visible
         linked_reports.append(
             LinkedReportOut(
                 link_id=link.id,
@@ -305,7 +327,17 @@ def get_incident_detail(db: Session, incident_id: str, current_user: User) -> In
         active_assignment = None
 
     evidence_out = [evidence_to_out(ev) for ev in incident.resolution_evidences]
-    disputes_out = [DisputeOut.model_validate(d) for d in incident.disputes]
+    disputes_out = [
+        DisputeOut.model_validate(d)
+        for d in incident.disputes
+        if not is_citizen or d.reporter_id == current_user.id
+    ]
+    # Citizens get the same coarse location as the public map (~1 km).
+    centroid_lat = incident.centroid_latitude
+    centroid_lon = incident.centroid_longitude
+    if is_citizen:
+        centroid_lat = round(centroid_lat, 2) if centroid_lat is not None else None
+        centroid_lon = round(centroid_lon, 2) if centroid_lon is not None else None
 
     return IncidentOut(
         id=incident.id,
@@ -315,12 +347,12 @@ def get_incident_detail(db: Session, incident_id: str, current_user: User) -> In
         summary=incident.summary,
         priority=incident.priority,
         lifecycle_status=incident.lifecycle_status,
-        centroid_latitude=incident.centroid_latitude,
-        centroid_longitude=incident.centroid_longitude,
+        centroid_latitude=centroid_lat,
+        centroid_longitude=centroid_lon,
         created_at=incident.created_at,
         updated_at=incident.updated_at,
         closed_at=incident.closed_at,
-        linked_reports_count=len(linked_reports),
+        linked_reports_count=len(links),  # true total; the list itself may be redacted for citizens
         linked_reports=linked_reports,
         requires_resolution_evidence=bool(incident.category.requires_resolution_evidence) if incident.category else True,
         resolution_evidence=evidence_out,

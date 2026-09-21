@@ -87,7 +87,7 @@ HTTP ──▶ endpoints/*.py ──▶ services/*.py ──▶ models/entities.
 
 | Role | How the account exists | What they can do |
 |---|---|---|
-| `CITIZEN` | Self-registers at `POST /auth/register` (role is **always** forced to CITIZEN) | Submit reports, upload photos, track by reference, list own reports, dispute a resolution of an incident linked to their report |
+| `CITIZEN` | Self-registers at `POST /auth/register` (role is **always** forced to CITIZEN) | Submit reports, upload photos, track by reference, list own reports, dispute a resolution of an incident linked to their report. `GET /incidents` shows only incidents linked to their own reports, with other citizens' reports/disputes removed and coordinates rounded |
 | `MODERATOR` | Provisioned by an admin | Review queue, verify/clarify/reject/escalate/merge, create incidents, link reports, assign institutions, review evidence, reopen, close |
 | `OFFICER` | Provisioned by an admin, bound to one institution | See only incidents assigned to their institution; accept/decline; submit evidence + photos; escalate |
 | `AUDITOR` | Provisioned by an admin | Read the global and per-incident audit trail |
@@ -199,7 +199,7 @@ Who may trigger what is enforced by `require_roles` at the endpoint and re-check
 | No self-assigned roles | `auth.register` | Always `CITIZEN`; staff via `/admin/users` |
 | Private media | `endpoints/media.py`, `services/media_links.py` | `GET /media/{id}` needs a staff/owner session **or** the signed, 1-hour token embedded in every `MediaAssetOut.url`. Anonymous → 403. Nothing is served as static files. |
 | Metadata stripping | `services/media_processor.py` | Pixels are copied into a fresh image; EXIF/GPS/ICC never reach disk |
-| Location minimisation | `reports/{ref}/status`, `incidents/public/map` | Public views expose only precision class or coordinates rounded to 2 dp (~1 km) |
+| Location minimisation | `reports/{ref}/status`, `incidents/public/map`, citizen view of `incidents/*` | Public and citizen views expose only precision class or coordinates rounded to 2 dp (~1 km); citizens never see another citizen's report or dispute |
 | Rate limiting | `dependencies.rate_limiter` | Login 20/min, register 10/min, report & media 30/min per IP → 429 |
 | Idempotency | reports, report media, evidence media | Same `Idempotency-Key` returns the original record |
 | Audit everything | `services/audit_service.py` | Material actions, provisioning, and audit reads |

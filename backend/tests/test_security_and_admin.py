@@ -215,3 +215,67 @@ def test_rate_limit_returns_429_with_stable_code(client):
     assert body["error_code"] == "RATE_LIMITED"
     assert body["details"]["retry_after_seconds"] > 0
     _rate_limit_cache.clear()
+
+
+# ------------------------------------------------------------ incident IDOR
+def test_citizen_sees_only_own_incidents_and_redacted_detail(client, citizen_token, moderator_token):
+    """A citizen must not read other citizens' reports, disputes or exact locations via /incidents."""
+    # Second citizen, registered through the public endpoint
+    other = client.post(
+        "/api/v1/auth/register",
+        json={"name_or_alias": "Other Citizen", "contact": "other@freetown.sl", "password": "OtherPass123!"},
+    ).json()
+    other_token = other["access_token"]
+
+    def make_report(token, desc, lat, lon):
+        return client.post(
+            "/api/v1/reports",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"category_code": "ROAD_POTHOLE", "description": desc, "latitude": lat, "longitude": lon,
+                  "location_precision": "EXACT"},
+        ).json()
+
+    mine = make_report(citizen_token, "Deep pothole outside my house on Wilkinson Road, dangerous.", 8.48371, -13.26412)
+    theirs = make_report(other_token, "Same pothole, my car was damaged, private details inside.", 8.48375, -13.26418)
+    unrelated = make_report(other_token, "Blocked drain at Lumley beach road causing flooding daily.", 8.45, -13.29)
+
+    mod = {"Authorization": f"Bearer {moderator_token}"}
+    for rep in (mine, theirs, unrelated):
+        client.post(f"/api/v1/moderation/reports/{rep['id']}/decision", headers=mod,
+                    json={"decision": "VERIFY", "reason": "Verified for test."})
+    cats = client.get("/api/v1/categories").json()
+    road = next(c for c in cats if c["code"] == "ROAD_POTHOLE")
+    shared = client.post("/api/v1/incidents", headers=mod, json={
+        "category_id": road["id"], "title": "Wilkinson Road pothole", "summary": "Shared case",
+        "priority": "HIGH", "report_id": mine["id"]}).json()
+    client.post(f"/api/v1/incidents/{shared['id']}/reports", headers=mod, json={"report_id": theirs["id"]})
+    private = client.post("/api/v1/incidents", headers=mod, json={
+        "category_id": road["id"], "title": "Lumley drain", "summary": "Other citizen only",
+        "priority": "MEDIUM", "report_id": unrelated["id"]}).json()
+
+    me = {"Authorization": f"Bearer {citizen_token}"}
+
+    # List: only the incident linked to my report
+    listing = client.get("/api/v1/incidents", headers=me)
+    assert listing.status_code == 200
+    ids = {i["id"] for i in listing.json()}
+    assert shared["id"] in ids and private["id"] not in ids
+    assert listing.headers["x-total-count"] == "1"
+
+    # Detail of an incident I am not linked to: forbidden
+    denied = client.get(f"/api/v1/incidents/{private['id']}", headers=me)
+    assert denied.status_code == 403
+
+    # Detail of the shared incident: only my report, coarse coordinates, no other-citizen data
+    detail = client.get(f"/api/v1/incidents/{shared['id']}", headers=me).json()
+    linked_ids = {lr["report"]["id"] for lr in detail["linked_reports"]}
+    assert linked_ids == {mine["id"]}
+    assert detail["linked_reports_count"] == 2  # count is not secret; contents are
+    assert "private details" not in str(detail)
+    assert detail["centroid_latitude"] == round(detail["centroid_latitude"], 2)
+    assert detail["centroid_longitude"] == round(detail["centroid_longitude"], 2)
+
+    # Staff still get the full picture
+    full = client.get(f"/api/v1/incidents/{shared['id']}", headers=mod).json()
+    assert {lr["report"]["id"] for lr in full["linked_reports"]} == {mine["id"], theirs["id"]}
+    assert abs(full["centroid_latitude"] - 8.48373) < 0.0005

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.incident import IncidentCreate, IncidentOut, IncidentLinkReport, IncidentStatusUpdate, IncidentPublicMapItem
-from app.models.entities import User, Incident, Assignment
+from app.models.entities import User, Incident, Assignment, Report, ReportIncidentLink
 from app.models.enums import UserRole, IncidentStatus
 from app.core.dependencies import get_current_user, require_roles
 from app.core.pagination import PageParams, page_params, paginate
@@ -66,9 +66,17 @@ def list_incidents(
     if status:
         query = query.filter(Incident.lifecycle_status == status)
 
-    if current_user.role == UserRole.OFFICER and current_user.institution_id:
-        # Filter incidents assigned to this officer's institution
+    if current_user.role == UserRole.OFFICER:
+        # Officers see only incidents assigned to their institution (none if unaffiliated).
         query = query.join(Assignment).filter(Assignment.institution_id == current_user.institution_id).distinct()
+    elif current_user.role == UserRole.CITIZEN:
+        # Citizens see only incidents linked to a report they submitted.
+        query = (
+            query.join(ReportIncidentLink, ReportIncidentLink.incident_id == Incident.id)
+            .join(Report, Report.id == ReportIncidentLink.report_id)
+            .filter(Report.reporter_id == current_user.id)
+            .distinct()
+        )
 
     incidents = paginate(query.order_by(Incident.created_at.desc()), page, response)
     return [get_incident_detail(db, inc.id, current_user) for inc in incidents]
