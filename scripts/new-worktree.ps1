@@ -116,6 +116,8 @@ New-Item -ItemType Directory -Force (Join-Path $target ".claude") | Out-Null
   ]
 }
 "@ | Set-Content -Path (Join-Path $target ".claude\launch.json") -Encoding utf8
+# launch.json is tracked; keep this worktree's port-specific copy out of git status/commits.
+git -C $target update-index --skip-worktree .claude/launch.json
 
 # --- 5. summary -------------------------------------------------------------
 Write-Host ""

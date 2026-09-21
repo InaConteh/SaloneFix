@@ -30,7 +30,10 @@ $target = Join-Path (Join-Path (Split-Path $repo -Parent) "salone-fix.wt") $slug
 if (-not (Test-Path $target)) { throw "No worktree folder at $target" }
 if ((Resolve-Path $target).Path -eq $repo) { throw "Refusing to remove the main checkout." }
 
-# Refuse to drop uncommitted work unless told to.
+# The worktree's launch.json is skip-worktree (see new-worktree.ps1); clear the flag so
+# git does not treat it as a blocker, then refuse to drop real uncommitted work unless told to.
+git -C $target update-index --no-skip-worktree .claude/launch.json 2>$null
+git -C $target checkout -- .claude/launch.json 2>$null
 $dirty = git -C $target status --porcelain
 if ($dirty -and -not $Force) {
   Write-Host $dirty
