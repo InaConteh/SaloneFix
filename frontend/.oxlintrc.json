@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "no-console": "warn",
+    "typescript/no-explicit-any": "warn",
+    // Data loading uses `useEffect(() => { void load(); }, [load])` where `load`
+    // only calls setState after `await`. The heuristic cannot see the await and
+    // reports a false positive on every page; there is no server-state library
+    // in this prototype to replace the pattern with.
+    "react/set-state-in-effect": "off"
+  },
+  "ignorePatterns": ["dist/", "node_modules/", "coverage/"]
+}

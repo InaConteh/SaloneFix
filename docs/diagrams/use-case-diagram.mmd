@@ -1,0 +1,39 @@
+graph TD
+    %% Actors
+    Citizen(("Citizen / Reporter"))
+    Moderator(("Human Moderator"))
+    Officer(("Institutional Officer"))
+    System(("SaloneFix System Engine"))
+
+    %% Subgraph Boundary
+    subgraph SaloneFix Platform
+        UC1("UC1: Submit Public-Service Report")
+        UC2("UC2: Track Report & View Feedback")
+        UC3("UC3: Review Low-Confidence Report")
+        UC4("UC4: Merge / Cluster Duplicates")
+        UC5("UC5: Assign Incident to Unit")
+        UC6("UC6: Submit Resolution Evidence")
+        UC7("UC7: Review Resolution & Close")
+        UC8("UC8: Audit Incident Lifecycle")
+        UC9("UC9: Dispute Incident Resolution")
+    end
+
+    %% Citizen Interactions
+    Citizen --> UC1
+    Citizen --> UC2
+    Citizen --> UC9
+
+    %% Moderator Interactions
+    Moderator --> UC3
+    Moderator --> UC4
+    Moderator --> UC8
+
+    %% Institutional Officer Interactions
+    Officer --> UC5
+    Officer --> UC6
+    Officer --> UC7
+
+    %% Automated Engine Support
+    System --> UC1
+    System --> UC3
+    System --> UC6

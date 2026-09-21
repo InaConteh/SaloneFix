@@ -1,0 +1,40 @@
+# Staging / demonstration stack. Development uses the local venv + Vite instead.
+#
+#   docker compose up --build
+#   API:  http://localhost:8000/docs      Frontend: http://localhost:8080
+#
+# Secrets come from a .env file next to this compose file (never committed).
+services:
+  backend:
+    build: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-staging}
+      DATABASE_URL: sqlite:////data/salonefix.db
+      STORAGE_DIR: /data/media_storage
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      CORS_ORIGINS: '["http://localhost:8080"]'
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Human-first rule: the stack must run with these absent.
+      AI_ENABLED: "false"
+      WHATSAPP_ENABLED: "false"
+    volumes:
+      - salonefix-data:/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+        VITE_DEMO_PERSONAS: ${VITE_DEMO_PERSONAS:-false}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  salonefix-data:
