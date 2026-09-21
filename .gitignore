@@ -40,3 +40,7 @@ Thumbs.db
 
 # --- Claude Code local state ---
 .claude/settings.local.json
+
+# Worktrees are created next to the repo (../salone-fix.wt); ignore any that end up inside it
+.worktrees/
+salone-fix.wt/

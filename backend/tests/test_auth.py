@@ -42,3 +42,14 @@ def test_get_current_user_profile(client, citizen_token):
     )
     assert response.status_code == 200
     assert response.json()["contact"] == "citizen@freetown.sl"
+
+
+def test_cors_origins_accepts_comma_separated_and_json(monkeypatch):
+    """`.env.example` uses a comma-separated list; deployments may pass JSON. Both must load."""
+    from app.core.config import Settings
+
+    monkeypatch.setenv("CORS_ORIGINS", "http://a.example:1, http://b.example:2")
+    assert Settings(_env_file=None).CORS_ORIGINS == ["http://a.example:1", "http://b.example:2"]
+
+    monkeypatch.setenv("CORS_ORIGINS", '["http://c.example:3"]')
+    assert Settings(_env_file=None).CORS_ORIGINS == ["http://c.example:3"]

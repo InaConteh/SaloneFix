@@ -59,7 +59,11 @@ salone fix/
 │   ├── src/types/index.ts   TS mirrors of backend schemas/enums
 │   ├── src/test/setup.ts    Vitest + Testing Library setup; tests live next to sources as *.test.ts(x)
 │   └── Dockerfile, nginx.conf
-├── scripts/run_demo.py      end-to-end lifecycle walkthrough calling services directly
+├── scripts/
+│   ├── run_demo.py          end-to-end lifecycle walkthrough calling services directly
+│   ├── check.ps1            every quality gate with a PASS/FAIL scoreboard (use before push/merge)
+│   ├── new-worktree.ps1     isolated feature worktree: own DB/media/ports, junctioned .venv + node_modules
+│   └── remove-worktree.ps1  tear-down that unlinks junctions before git removes the worktree
 ├── docs/
 │   ├── specs/               numbered specification pack (01…10) — the source of truth
 │   ├── diagrams/            UML/architecture PNGs + Mermaid source
@@ -100,6 +104,14 @@ cd frontend && npm run build         # tsc -b && vite build
 # Full lifecycle demo against the local SQLite DB
 cd backend && .venv/Scripts/python.exe ../scripts/run_demo.py
 
+# All gates in one go (PowerShell) — run this before claiming a branch is done
+.\scripts\check.ps1                 # -Quick skips the build; -Backend / -Frontend narrow it
+
+# Feature work happens in worktrees, never directly on main
+.\scripts
+ew-worktree.ps1 -Name feat/thing      # ..\salone-fix.wteat-thing, ports 8001/5174
+.\scriptsemove-worktree.ps1 -Name feat/thing -DeleteBranch
+
 # Staging/demo containers (needs JWT_SECRET / SESSION_SECRET in a root .env)
 docker compose up --build
 ```
@@ -127,6 +139,13 @@ Windows note: when scripting file edits with Python, pass `encoding="utf-8"` (or
 - **Notifications** are in-app only (`notification_service`, channel `IN_APP`). Failures are logged via the structured logger and never roll back the triggering action.
 - **Logging:** JSON lines to stdout (`app/core/logging.py`), every record carries the `request_id`. Log with `logger.info("event_name", extra={"data": {...}})`. No `print()`.
 - **Schema changes:** edit `entities.py`, then `alembic revision --autogenerate`, review the file, and commit it under `backend/alembic/versions/`. `init_db.run_migrations()` upgrades on startup and stamps legacy `create_all` databases at `0001` first. Tests still use `create_all` on an in-memory DB. Keep seed data idempotent.
+
+## Branching and worktrees
+
+- `main` is always green and runnable. Do feature/fix work in a worktree created by `scripts/new-worktree.ps1`; it gets its own SQLite file, `media_storage/` and ports, so experiments cannot corrupt the main checkout's data.
+- `backend/.venv` and `frontend/node_modules` inside a worktree are **junctions** to the main checkout. Never `rm -rf` a worktree folder — use `scripts/remove-worktree.ps1`, which unlinks them first. If a branch changes `requirements.txt` or `package.json`, create its worktree with `-FreshDeps`.
+- Parallel Alembic revisions produce two heads on merge: resolve with `alembic merge -m "merge heads" <a> <b>`, never by renumbering files.
+- `scripts/check.ps1` must pass in the worktree before a branch is pushed or merged; CI runs the same gates.
 
 ## Testing conventions
 

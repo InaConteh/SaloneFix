@@ -277,7 +277,10 @@ Schema changes go through Alembic (`backend/alembic/versions/`): `0001` is the b
 | Frontend (14 tests) | `cd frontend && npm test` | API client (token, pagination header, idempotency key, typed errors), `StatusBadge`, `LoginView` (sign in, error display, citizen-only registration) |
 | Static | `npm run lint` · `npm run build` | oxlint (warning-free) and the TypeScript/Vite production build |
 | End-to-end | `scripts/run_demo.py` | Full lifecycle through the service layer with printed audit chain |
-| CI | `.github/workflows/ci.yml` | Migrations on an empty DB, human-first start-up check, pytest, lint, vitest, build, dependency audits |
+| All of the above | `.\scripts\check.ps1` | Runs every gate locally with a PASS/FAIL scoreboard; use it inside a feature worktree before pushing |
+| CI | `.github/workflows/ci.yml` | Same gates plus dependency audits, on every push and PR |
+
+Feature work is done in isolated worktrees (`scripts/new-worktree.ps1`), each with its own database, media folder and ports — see the README section *Working on features safely*.
 
 ---
 
