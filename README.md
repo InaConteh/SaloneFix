@@ -2,7 +2,7 @@
 
 Freetown public-service incident reporting prototype. Citizens report civic issues (potholes, drainage, waste, public facilities); human moderators verify and cluster them into incidents; institutional officers resolve them with evidence; auditors can inspect the full lifecycle.
 
-**Current phase:** Human-First Foundation Launch — AI and WhatsApp integrations are disabled by design. See [`docs/specs/README.md`](docs/specs/README.md) for the phase plan and [`CLAUDE.md`](CLAUDE.md) for engineering conventions.
+**Current phase:** Human-First Foundation Launch — AI and WhatsApp integrations are disabled by design. Start with [`docs/WALKTHROUGH.md`](docs/WALKTHROUGH.md) for how the system works end to end, [`docs/specs/README.md`](docs/specs/README.md) for the phase plan, and [`CLAUDE.md`](CLAUDE.md) for engineering conventions.
 
 ## Layout
 
