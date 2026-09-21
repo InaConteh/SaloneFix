@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 # Baked at build time; override with --build-arg for staging/demo.
-ARG VITE_API_BASE_URL=http://localhost:8000/api/v1
+ARG VITE_API_BASE_URL=/api/v1
 ARG VITE_DEMO_PERSONAS=false
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL VITE_DEMO_PERSONAS=$VITE_DEMO_PERSONAS
 RUN npm run build

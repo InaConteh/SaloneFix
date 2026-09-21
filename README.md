@@ -33,6 +33,18 @@ npm install
 npm run dev                                                       # http://localhost:5173
 ```
 
+## Using it from a phone
+
+The Vite dev server listens on all interfaces and proxies `/api` to the backend, so a phone on the **same Wi-Fi / hotspot** only needs the laptop's address:
+
+1. Start both servers as above.
+2. Find the laptop's IPv4 address (`ipconfig` → Wi-Fi → IPv4, e.g. `172.20.10.10`).
+3. On the phone open `http://<that-address>:5173`.
+
+If it does not load, Windows Firewall is blocking Node: allow **Node.js** on private networks when prompted, or run once as administrator:
+`netsh advfirewall firewall add rule name="Vite dev server" dir=in action=allow protocol=TCP localport=5173`.
+The backend stays bound to `127.0.0.1` and is only reachable through the proxy.
+
 ## Checking a branch
 
 One command runs every gate (migrations on an empty DB, human-first start-up check, pytest, oxlint, vitest, production build) and prints a scoreboard:

@@ -15,11 +15,13 @@ import type {
   ResolutionEvidence,
 } from "../types";
 
-// Base URL comes from the environment so the same build can point at a
-// staging/demo API; the fallback matches the local uvicorn default.
-export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "http://localhost:8000/api/v1";
+// Base URL comes from the environment. A relative value (default "/api/v1") is
+// served through the Vite dev-server / nginx proxy, which is what lets a phone on
+// the same Wi-Fi use the app without CORS or a hard-coded laptop IP. An absolute
+// URL points at a separately hosted API.
+const configuredBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") || "/api/v1";
+const pageOrigin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
+export const API_BASE_URL: string = new URL(configuredBase, pageOrigin).toString().replace(/\/+$/, "");
 
 /** Origin of the API (scheme + host), for absolute media URLs. */
 export const API_ORIGIN = new URL(API_BASE_URL).origin;

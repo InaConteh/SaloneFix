@@ -174,7 +174,7 @@ Seeded categories: `ROAD_POTHOLE`, `DRAINAGE_FLOODING`, `WASTE_MANAGEMENT`, `PUB
 - Data loading pattern: `const load = useCallback(async () => {...}, [])` + `useEffect(() => { void load(); }, [load])`, with `loading` initialised to `true`. The `react/set-state-in-effect` lint rule is disabled for this reason (see `.oxlintrc.json`).
 - All API calls go through `src/api/client.ts`; add a typed function there rather than calling `fetch` in a component. Keep `src/types/index.ts` in sync with backend schemas/enums. Surface failures with `describeError(err)` into an inline `role="alert"` — no `alert()`/`console.error`.
 - Style with the CSS variables in `src/styles/tokens.css` and follow `02-design/design-guide.md`. Target WCAG 2.2 AA: real `<button type="button">`s, labelled inputs (`htmlFor`), `aria-pressed`/`role="tab"` for toggles, decorative icons `aria-hidden`, status conveyed by text not colour alone (`StatusBadge`).
-- API base URL comes from `VITE_API_BASE_URL` (`frontend/.env.example`), falling back to `http://localhost:8000/api/v1`. Only `VITE_*` variables reach the bundle — never put secrets there.
+- API base URL comes from `VITE_API_BASE_URL` (`frontend/.env.example`), default `/api/v1`, which the Vite dev server (`vite.config.ts` → `server.proxy`) and the nginx container proxy to the backend. Keep it relative unless the API is hosted separately: it is what lets phones on the LAN use the app with no CORS and keeps the backend bound to localhost. Only `VITE_*` variables reach the bundle — never put secrets there.
 
 ## Prohibited shortcuts (from `10-ai-developer-instructions.md`)
 

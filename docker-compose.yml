@@ -1,7 +1,7 @@
 # Staging / demonstration stack. Development uses the local venv + Vite instead.
 #
 #   docker compose up --build
-#   API:  http://localhost:8000/docs      Frontend: http://localhost:8080
+#   Frontend: http://localhost:8080   (API is proxied under http://localhost:8080/api/)
 #
 # Secrets come from a .env file next to this compose file (never committed).
 services:
@@ -20,15 +20,16 @@ services:
       WHATSAPP_ENABLED: "false"
     volumes:
       - salonefix-data:/data
-    ports:
-      - "8000:8000"
+    # Not published to the host: reached only through the frontend's nginx proxy.
+    expose:
+      - "8000"
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
         VITE_DEMO_PERSONAS: ${VITE_DEMO_PERSONAS:-false}
     ports:
       - "8080:80"

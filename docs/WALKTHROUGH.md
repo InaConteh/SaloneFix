@@ -38,7 +38,7 @@ cd backend  && .venv/Scripts/python.exe main.py     # migrations run, seed data 
 cd frontend && npm run dev                          # Vite dev server
 ```
 
-Open <http://localhost:5173>. The API's interactive docs are at <http://localhost:8000/docs>; `/health` reports the phase and confirms `ai_enabled: false`, `whatsapp_enabled: false`.
+Open <http://localhost:5173> — or, from a phone on the same Wi-Fi, `http://<laptop-ip>:5173`; the dev server proxies `/api` to the backend so only one address is needed. The API's interactive docs are at <http://localhost:8000/docs>; `/health` reports the phase and confirms `ai_enabled: false`, `whatsapp_enabled: false`.
 
 ---
 
