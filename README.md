@@ -53,16 +53,14 @@ cd frontend && npm run lint && npm test && npm run build
 `main` stays runnable at all times; each feature or fix lives in its own worktree with its **own database, media folder and ports**, while sharing the installed `.venv` and `node_modules` through directory junctions so nothing is reinstalled.
 
 ```powershell
-.\scripts
-ew-worktree.ps1 -Name feat/my-feature            # -> ..\salone-fix.wteat-my-feature on ports 8001 / 5174
-.\scripts
-ew-worktree.ps1 -Name fix/other -BackendPort 8002 -FrontendPort 5175
+.\scripts\new-worktree.ps1 -Name feat/my-feature            # -> ..\salone-fix.wt\feat-my-feature on ports 8001 / 5174
+.\scripts\new-worktree.ps1 -Name fix/other -BackendPort 8002 -FrontendPort 5175
 ```
 
 Inside the worktree: run `.\scripts\check.ps1`, start the servers (the generated `.claude\launch.json` already uses the right ports), commit, push, open a PR. When merged:
 
 ```powershell
-.\scriptsemove-worktree.ps1 -Name feat/my-feature -DeleteBranch
+.\scripts\remove-worktree.ps1 -Name feat/my-feature -DeleteBranch
 ```
 
 Always use `remove-worktree.ps1` rather than deleting the folder: it unlinks the junctions first so the shared `.venv` / `node_modules` are never deleted along with the worktree.

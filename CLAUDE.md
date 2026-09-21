@@ -108,9 +108,8 @@ cd backend && .venv/Scripts/python.exe ../scripts/run_demo.py
 .\scripts\check.ps1                 # -Quick skips the build; -Backend / -Frontend narrow it
 
 # Feature work happens in worktrees, never directly on main
-.\scripts
-ew-worktree.ps1 -Name feat/thing      # ..\salone-fix.wteat-thing, ports 8001/5174
-.\scriptsemove-worktree.ps1 -Name feat/thing -DeleteBranch
+.\scripts\new-worktree.ps1 -Name feat/thing      # ..\salone-fix.wt\feat-thing, ports 8001/5174
+.\scripts\remove-worktree.ps1 -Name feat/thing -DeleteBranch
 
 # Staging/demo containers (needs JWT_SECRET / SESSION_SECRET in a root .env)
 docker compose up --build
