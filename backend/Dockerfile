@@ -15,6 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Data (SQLite file + private media) lives on a mounted volume, never in the image.
+# /data is created and owned here; the DATABASE_URL and STORAGE_DIR below must keep
+# pointing at it. Pointing them inside /app puts the database and uploaded evidence in
+# the container's writable layer, where they are silently lost when it is recreated.
 RUN mkdir -p /data/media_storage && useradd -r -u 1001 salonefix && chown -R salonefix /app /data
 USER salonefix
 
