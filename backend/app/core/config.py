@@ -39,6 +39,10 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in raw.split(",") if origin.strip()]
         return value
 
+    # Delivery phase. Reported by /health and stamped onto every baseline metrics
+    # export, because a human-only baseline is only valid while AI stays off.
+    PHASE_NAME: str = "Human-First Foundation Launch"
+
     # Future integration flags / placeholders (safe defaults)
     AI_ENABLED: bool = False
     AI_API_KEY: str | None = None

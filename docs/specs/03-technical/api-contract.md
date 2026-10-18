@@ -32,6 +32,7 @@ Base path: `/api/v1`. Use JSON for structured data and multipart upload for medi
 | GET | `/incidents/{id}/audit` | Authorized auditor | Read history |
 | GET | `/institutions` | Authorized | List institutions |
 | GET | `/categories` | Public/authorized | List active categories |
+| GET | `/metrics/baseline` | Admin/auditor | Human-only baseline metrics for Phase 2 |
 
 ## 3. Example report request
 
@@ -64,6 +65,8 @@ Use stable error codes: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FO
 ## 6. Authorization rules
 
 The server must check both role and object ownership. A citizen must not retrieve another citizen’s report by changing an ID. An institution officer must see only incidents assigned to the relevant institution. Audit access is restricted.
+
+Cross-case aggregate reporting (`/metrics/baseline`) is restricted to administrators and auditors. Moderators and officers must not read it: it contains per-moderator workload alongside that of their colleagues.
 
 ## 7. Idempotency
 

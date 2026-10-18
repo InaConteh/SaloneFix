@@ -153,6 +153,24 @@ docker compose up --build
 
 Frontend on <http://localhost:8080>, with the API proxied under `/api/` by nginx. The backend container is not published to the host.
 
+### Freezing the human-only baseline
+
+Phase 2 compares a human-only baseline against later AI-assisted runs. Export the current
+numbers (report completion, median review time, duplicate and clarification rates, evidence
+agreement, dispute rate, audit completeness, moderator workload) and freeze them:
+
+```bash
+cd backend && .venv/Scripts/python.exe ../scripts/freeze_baseline.py --label uat-round-1
+```
+
+This writes `docs/baselines/baseline-uat-round-1.{json,md}` — the JSON is what Phase 3 is
+compared against, the Markdown is for the written report. Commit both. The script refuses to
+run while AI or WhatsApp is enabled, because that would not be a human-only baseline.
+
+Admins and auditors can also read the live figures at `GET /api/v1/metrics/baseline`
+(optional `from` / `to` window). Three metrics the research protocol asks for need offline
+human labelling and are reported as explicitly *unavailable* rather than estimated.
+
 ### Seeing the lifecycle without the UI
 
 Drives a full report → moderation → assignment → evidence → dispute → reopen cycle through the service layer and prints the resulting audit trail:

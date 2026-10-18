@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     media,
     notifications,
     admin,
+    metrics,
 )
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(media.router, prefix="/media", tags=["media"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(metrics.router, prefix="/metrics", tags=["metrics"])

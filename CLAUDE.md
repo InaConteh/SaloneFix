@@ -44,8 +44,10 @@ salone fix/
 │   ├── app/models/          entities.py (ORM), enums.py (all status/role enums)
 │   ├── app/schemas/         Pydantic request/response models, one file per domain (incl. admin.py)
 │   ├── app/services/        domain logic — report, moderation, incident, assignment, resolution, audit,
-│   │                        notification, media_processor, media_links (signed URLs), storage
-│   ├── app/api/v1/          router.py + endpoints/ (thin HTTP layer; admin.py = staff/institution provisioning)
+│   │                        notification, media_processor, media_links (signed URLs), storage,
+│   │                        metrics (read-only Phase 2 baseline aggregation)
+│   ├── app/api/v1/          router.py + endpoints/ (thin HTTP layer; admin.py = staff/institution provisioning,
+│   │                        metrics.py = read-only baseline export for admins/auditors)
 │   ├── tests/               pytest suite (conftest: in-memory DB, per-role token fixtures, rate-limit reset)
 │   ├── Dockerfile           non-root image; data on /data volume
 │   ├── media_storage/       private uploaded images (gitignored, never served as static files)
@@ -61,11 +63,13 @@ salone fix/
 │   └── Dockerfile, nginx.conf
 ├── scripts/
 │   ├── run_demo.py          end-to-end lifecycle walkthrough calling services directly
+│   ├── freeze_baseline.py   writes a frozen human-only baseline into docs/baselines/
 │   ├── check.ps1            every quality gate with a PASS/FAIL scoreboard (use before push/merge)
 │   ├── new-worktree.ps1     isolated feature worktree: own DB/media/ports, junctioned .venv + node_modules
 │   └── remove-worktree.ps1  tear-down that unlinks junctions before git removes the worktree
 ├── docs/
 │   ├── specs/               numbered specification pack (01…10) — the source of truth
+│   ├── baselines/           frozen human-only baseline snapshots (committed; never hand-edited)
 │   ├── diagrams/            UML/architecture PNGs + Mermaid source
 │   └── proposal/            project proposal PDF/DOCX (reference only)
 ├── everything-claude-code/  vendored ECC toolkit — gitignored, already installed into ~/.claude
@@ -103,6 +107,9 @@ cd frontend && npm run build         # tsc -b && vite build
 
 # Full lifecycle demo against the local SQLite DB
 cd backend && .venv/Scripts/python.exe ../scripts/run_demo.py
+
+# Freeze the human-only baseline for Phase 2 (refuses to run with AI/WhatsApp enabled)
+cd backend && .venv/Scripts/python.exe ../scripts/freeze_baseline.py --label uat-round-1
 
 # All gates in one go (PowerShell) — run this before claiming a branch is done
 .\scripts\check.ps1                 # -Quick skips the build; -Backend / -Frontend narrow it
@@ -196,4 +203,8 @@ After editing: summarize changes, list tests run with results, list unresolved r
 - Rate limiter and notification delivery are in-process; a multi-worker deployment needs a shared store (Redis) for both.
 - Officers have no free-text "progress note" endpoint — progress is expressed via status transitions (`IN_PROGRESS`, `ESCALATED`) and evidence records.
 - `due_at` is set at assignment and surfaced as `is_overdue`; nothing yet notifies on overdue.
+- Baseline metrics are computed in Python over whole tables (`metrics_service`), which is fine at prototype
+  volumes and would need SQL aggregation on a production-sized dataset. Three protocol metrics
+  (correct category, correct routing, usability) need offline human labelling and are reported as
+  `unavailable_metrics` rather than estimated — never fill them in from system data.
 - Playwright E2E tests are not set up; `scripts/run_demo.py` plus the pytest lifecycle test are the end-to-end checks.
