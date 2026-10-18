@@ -129,7 +129,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 def health_check():
     return {
         "status": "healthy",
-        "phase": "Human-First Foundation Launch",
+        "phase": settings.PHASE_NAME,
         "ai_enabled": settings.AI_ENABLED,
         "whatsapp_enabled": settings.WHATSAPP_ENABLED,
     }
