@@ -73,6 +73,15 @@ Link-Or-Install (Join-Path $target "frontend\node_modules") (Join-Path $repo "fr
   Pop-Location
 } "frontend\node_modules"
 
+function Write-TextNoBom {
+  param([string]$Path, [string]$Text)
+  # PowerShell 5.1's -Encoding utf8 writes a BOM. Vite's dotenv parser does not
+  # strip it, so the first variable in a generated .env is read as "﻿NAME"
+  # and silently ignored - which previously left the dev server proxying to the
+  # default port 8000 instead of this worktree's backend.
+  [System.IO.File]::WriteAllText($Path, $Text, (New-Object System.Text.UTF8Encoding $false))
+}
+
 # --- 3. environment: own DB, own media, own ports ---------------------------
 $backendEnvSrc = Join-Path $repo "backend\.env"
 $backendEnv = Join-Path $target "backend\.env"
@@ -86,16 +95,20 @@ $envText = Get-Content $backendEnv -Raw
 $envText = $envText -replace "(?m)^DATABASE_URL=.*$", "DATABASE_URL=sqlite:///./salonefix.db"
 $envText = $envText -replace "(?m)^STORAGE_DIR=.*$", "STORAGE_DIR=./media_storage"
 $envText = $envText -replace "(?m)^CORS_ORIGINS=.*$", "CORS_ORIGINS=http://localhost:$FrontendPort,http://127.0.0.1:$FrontendPort,http://localhost:5173"
-Set-Content -Path $backendEnv -Value $envText -Encoding utf8
+Write-TextNoBom -Path $backendEnv -Text $envText
 
-@"
-VITE_API_BASE_URL=http://localhost:$BackendPort/api/v1
+$frontendEnv = @"
+VITE_API_BASE_URL=/api/v1
 VITE_DEMO_PERSONAS=true
-"@ | Set-Content -Path (Join-Path $target "frontend\.env.local") -Encoding utf8
+# This worktree's dev server proxies /api and /health here. Keep the base URL
+# relative so there is no CORS and a phone on the LAN can reach the app.
+API_PROXY_TARGET=http://127.0.0.1:$BackendPort
+"@
+Write-TextNoBom -Path (Join-Path $target "frontend\.env.local") -Text $frontendEnv
 
 # --- 4. launch config for the Claude desktop app ---------------------------
 New-Item -ItemType Directory -Force (Join-Path $target ".claude") | Out-Null
-@"
+$launchJson = @"
 {
   "version": "0.0.1",
   "configurations": [
@@ -115,7 +128,8 @@ New-Item -ItemType Directory -Force (Join-Path $target ".claude") | Out-Null
     }
   ]
 }
-"@ | Set-Content -Path (Join-Path $target ".claude\launch.json") -Encoding utf8
+"@
+Write-TextNoBom -Path (Join-Path $target ".claude\launch.json") -Text $launchJson
 # launch.json is tracked; keep this worktree's port-specific copy out of git status/commits.
 git -C $target update-index --skip-worktree .claude/launch.json
 

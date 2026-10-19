@@ -354,8 +354,10 @@ export const CitizenView: React.FC = () => {
                 <label className="input-label">Select Issue Category</label>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "10px" }}>
                   {categories.map((cat) => (
-                    <div
+                    <button
                       key={cat.id}
+                      type="button"
+                      aria-pressed={categoryCode === cat.code}
                       onClick={() => setCategoryCode(cat.code)}
                       style={{
                         padding: "12px",
@@ -363,6 +365,8 @@ export const CitizenView: React.FC = () => {
                         border: categoryCode === cat.code ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
                         backgroundColor: categoryCode === cat.code ? "var(--color-primary-light)" : "#ffffff",
                         cursor: "pointer",
+                        textAlign: "left",
+                        font: "inherit",
                       }}
                     >
                       <div style={{ fontWeight: 600, fontSize: "0.9rem", color: categoryCode === cat.code ? "var(--color-primary)" : "var(--color-text)" }}>
@@ -371,15 +375,16 @@ export const CitizenView: React.FC = () => {
                       <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "4px" }}>
                         {cat.description}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
 
               {/* Problem Description */}
               <div>
-                <label className="input-label">Description of Problem</label>
+                <label className="input-label" htmlFor="report-description">Description of Problem</label>
                 <textarea
+                  id="report-description"
                   className="input-field"
                   rows={4}
                   required
@@ -445,19 +450,25 @@ export const CitizenView: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="e.g. Near St. John Roundabout beside the market stalls"
-                    value={manualLocation}
-                    onChange={(e) => setManualLocation(e.target.value)}
-                  />
+                  <>
+                    <label className="sr-only" htmlFor="landmark-description">
+                      Landmark description
+                    </label>
+                    <input
+                      id="landmark-description"
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Near St. John Roundabout beside the market stalls"
+                      value={manualLocation}
+                      onChange={(e) => setManualLocation(e.target.value)}
+                    />
+                  </>
                 )}
               </div>
 
               {/* Media Photo Upload */}
               <div>
-                <label className="input-label">Attach Photo Evidence (Optional)</label>
+                <label className="input-label" htmlFor="photo-upload">Attach Photo Evidence (Optional)</label>
                 <div style={{
                   border: "2px dashed var(--color-border)",
                   borderRadius: "var(--radius-md)",
