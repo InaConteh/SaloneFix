@@ -37,6 +37,8 @@ everything-claude-code/
 .DS_Store
 Thumbs.db
 *.log
+# Word/Excel lock files left behind while a document is open
+~$*
 
 # --- Claude Code local state ---
 .claude/settings.local.json
