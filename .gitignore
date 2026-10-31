@@ -46,6 +46,8 @@ Thumbs.db
 # --- Stray local files ---
 # Downloaded installer archive, not project content
 archive-sv4vtu/
+# Local working copies of documents already tracked under docs/report/
+docs/Questionaire/
 
 # Worktrees are created next to the repo (../salone-fix.wt); ignore any that end up inside it
 .worktrees/
